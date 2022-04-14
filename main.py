@@ -1,3 +1,4 @@
+#libraries imported for the prediction tool
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -5,54 +6,47 @@ import pandas as pd
 import pandas_datareader as web
 import pandas_datareader as pdr
 import datetime as dt
-import tensorflow as tf
 
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Dropout, LSTM
 
-from matplotlib import rcParams
+#libraries imported for plotting the graphs
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
-from datetime import date, datetime, time, timedelta, timezone
-
+from datetime import date, timedelta
 import mplfinance as mpf
-import tkinter as tk
-from tkinter import *
-
-from tkinter import messagebox #tkinter module for pop up messages
 
 # gui uses tkinter library
-
+import tkinter as tk
 from tkinter import *
+from tkinter import messagebox #tkinter module for pop up messages
+
+#---
 
 # global variables
-
 CANDLESTICK_CHART = "CANDLESTICK_CHART"
 LINE_CHART = "LINE_CHART"
 
 global currentChart
-global canvas
-
-
-
 currentChart = "not initialised"
+#not initialised until the user selects line/candlestick chart
 
-root = Tk()
-
+root = Tk() #global root
 root.title('Stock Program')
 root.geometry("1200x800")
 
-toolbarFrame = Frame(master=root)
+toolbarFrame = Frame(master=root) # global toolbar
 toolbarFrame.place(relx=0.5, rely=0.65, anchor=CENTER)
 
+#---
 
+# MENU option google
 def menuOptGoog():
     labelTitle = Label(root, text="Google", font=('Helvetica', 20))
     labelTitle.place(relx=0.5, y=10, anchor=CENTER)
 
-    # CHART BUTTONS
+    # chart buttons
 
     googleLineChart = Button(root, text="Line Chart", command=GOOG_stock_line, height=1, width=50)
     googleLineChart.place(relx=0.2, y=40, anchor=CENTER)
@@ -63,7 +57,7 @@ def menuOptGoog():
     googlePredictionLine = Button(root, text="Prediction Line", command=predictionTool, height=1, width=50)
     googlePredictionLine.place(relx=0.8, y=40, anchor=CENTER)
 
-    # SELECT TIME INTERVAL BUTTONS
+    # select the time interval buttons
 
     googDay = Button(root, text="1 day", command=oneDay, height=1, width=20)
     googDay.place(relx=0.2, rely=0.7, anchor=CENTER)
@@ -78,7 +72,7 @@ def menuOptGoog():
     l = tk.Label(root, textvariable=var, bg='light grey', font=('Arial', 12), width=54, height=20)
     l.place(relx=0.5, rely=0.35, anchor=CENTER)
 
-    # PREDICTION TEXT
+    # prediction text
 
     labelNextDayPrediction = Label(root, text="Predicted closing price for the following day:", font=('Helvetica', 10))
     labelNextDayPrediction.place(relx=0.5, rely=0.8, anchor=E)
@@ -86,25 +80,24 @@ def menuOptGoog():
     l = tk.Label(root, textvariable=var, bg='light grey', font=('Arial', 12), width=15, height=2)
     l.place(relx=0.5, rely=0.8, anchor=W)
 
-    # #defining toolbar frame
-    # toolbarFrame = Frame(master=root)
-    # toolbarFrame.place(relx=0.5, rely=0.65, anchor=CENTER)
-
+# ERROR CHECKS
 def errorMessage():
     messagebox.showerror('User action required:', 'Please select type of graph to be displayed for your chosen time interval!')
+
+def userNote():
+    messagebox.showwarning('Note:', 'The prediction tool is currently '
+                                  'training and testing data from the past to form a prediction. This will require some time.'
+                                  ' Select OK to continue. ')
 
 def clearToolbar():
     for widgets in toolbarFrame.winfo_children():
      widgets.destroy()
 
+#---
 
-#global toolbarFrame
-#def clearToolbar():
+#LINE/CANDLESTICK CHARTS
 
 def oneDay():
-   # canvas.delete("All")
-   # clearToolbar()
-
     print("In oneDay(). currentChart =", currentChart) #for me to see in the sys out
     if currentChart == LINE_CHART:
 
@@ -114,13 +107,8 @@ def oneDay():
         return googOneDayCandleStickChart()
     else:
         return errorMessage()
-    #toolbarFrame.destroy()
-
-
 
 def oneWeek():
-   # clearToolbar()
-   # canvas.delete("All")
     print("In oneWeek(). currentChart =", currentChart)
     if currentChart == LINE_CHART:
 
@@ -155,120 +143,65 @@ def oneYear():
     else:
         return errorMessage()
 
+#---
 
-# def _clear():
-#     for item in canvas.get_tk_widget().find_all():
-#        canvas.get_tk_widget().delete(item)
-
-# def clear_frame():
-#    for widgets in toolbarFrame.winfo_children():
-#       widgets.destroy()
-
-
-
-
+#LINE CHARTS
 def googOneDayLineChart():
 
-    plt.close()
     stockOne = ['GOOG']
     today = date.today()
-    yesterday = today - timedelta(days=2)
+    yesterday = today - timedelta(days=2) #one day interval
     dataOne = pdr.get_data_yahoo(stockOne, start=yesterday)['Close']
-    dataOne.head()
 
-    plt.grid(True, color='k', linestyle=':')
-    rcParams['figure.figsize'] = 12, 6
-    plt.plot(dataOne.GOOG)
-    plt.grid(True, color='k', linestyle=':')
-    plt.title("GOOG Prices")
-    plt.ylabel("Price")
-
+    #figure settings
     fig = Figure(figsize=(5, 4), dpi=100)
     plot1 = fig.add_subplot(111)
+    plot1.set_ylabel("Price", fontsize=8, fontweight = 'bold')
     fig.autofmt_xdate(rotation=45)
+
     plot1.plot(dataOne)
 
+    #creating a canvas which will hold the figure and embed it in the root
     canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER) #35
+    canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
 
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
 
-
-    # toolbarFrame = Frame(master=root)
-    # toolbarFrame.place(relx=0.5, rely=0.65, anchor=CENTER)
-    # toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
-    #toolbar = NavigationToolbar2Tk(frame, root)
-    canvas.draw()
-    #toolbar.destroy()
-    # for widgets in toolbarFrame.winfo_children():
-    #     widgets.destroy()
-
-
-
-    plt.close()
-
 def googOneWeekLineChart():
+
     stockOne = ['GOOG']
     today = date.today()
     yesterday = today - timedelta(days=7)
     dataOne = pdr.get_data_yahoo(stockOne, start=yesterday)['Close']
-    dataOne.head()
 
-    plt.grid(True, color='k', linestyle=':')
-    rcParams['figure.figsize'] = 12, 6
-    plt.plot(dataOne.GOOG)
-
-    plt.grid(True, color='k', linestyle=':')
-    plt.title("GOOG Prices")
-    plt.xlabel("Date")
-
-
+    #figure
     fig = Figure(figsize=(5, 4), dpi=100)
     plot1 = fig.add_subplot(111)
+    plot1.set_ylabel("Price", fontsize=8, fontweight='bold')
     fig.autofmt_xdate(rotation=45)
     plot1.plot(dataOne)
 
+    #canvas
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER) #0.5
     mpl.rcParams['toolbar'] = 'None'
 
     clearToolbar()
-
-    # for widgets in toolbarFrame.winfo_children():
-    #  widgets.destroy()
-
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
 
-
-    # toolbar = NavigationToolbar2Tk(canvas, root)
-    # toolbar.place(relx=0.5, rely=0.65, anchor=CENTER)
-    canvas.draw()
-    #toolbar.destroy()
-
-
-    #plt.close()
-
-
 def googOneMonthLineChart():
-    #plt.close()
+
     stockOne = ['GOOG']
     today = date.today()
     yesterday = today - timedelta(days=30)
     dataOne = pdr.get_data_yahoo(stockOne, start=yesterday)['Close']
-    dataOne.head()
-
-    plt.grid(True, color='k', linestyle=':')
-    rcParams['figure.figsize'] = 12, 6
-    plt.plot(dataOne.GOOG)
-    plt.grid(True, color='k', linestyle=':')
-    plt.title("GOOG Prices")
-    plt.ylabel("Price")
 
     fig = Figure(figsize=(5, 4), dpi=100)
     plot1 = fig.add_subplot(111)
+    plot1.set_ylabel("Price", fontsize=8, fontweight='bold')
     fig.autofmt_xdate(rotation=45)
     plot1.plot(dataOne)
 
@@ -279,30 +212,16 @@ def googOneMonthLineChart():
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
 
-
-    # toolbar = NavigationToolbar2Tk(canvas, root)
-    # toolbar.place(relx=0.5, rely=0.65, anchor=CENTER)
-    canvas.draw()
-    #plt.close()
-
-
 def googOneYearLineChart():
-   # plt.close()
+
     stockOne = ['GOOG']
     today = date.today()
     yesterday = today - timedelta(days=365)
     dataOne = pdr.get_data_yahoo(stockOne, start=yesterday)['Close']
-    dataOne.head()
-
-    plt.grid(True, color='k', linestyle=':')
-    rcParams['figure.figsize'] = 12, 6
-    plt.plot(dataOne.GOOG)
-    plt.grid(True, color='k', linestyle=':')
-    plt.title("GOOG Prices")
-    plt.ylabel("Price")
 
     fig = Figure(figsize=(5, 4), dpi=100)
     plot1 = fig.add_subplot(111)
+    plot1.set_ylabel("Price", fontsize=8, fontweight='bold')
     fig.autofmt_xdate(rotation=45)
     plot1.plot(dataOne)
 
@@ -311,30 +230,16 @@ def googOneYearLineChart():
 
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
-
-
-
-    # toolbar = NavigationToolbar2Tk(canvas, root)
-    # toolbar.place(relx=0.5, rely=0.65, anchor=CENTER)
-    canvas.draw()
-   # plt.close()
 
 
 def GOOG_stock_line():
 
-    #plt.close()
     stockOne = ['GOOG']
     dataOne = pdr.get_data_yahoo(stockOne, start='2019-01-01')['Close']
-    dataOne.head()
-
-    rcParams['figure.figsize'] = 12, 6
-    plt.plot(dataOne.GOOG)
-    plt.grid(True, color='k', linestyle=':')
-    plt.title("GOOG Prices")
-    plt.ylabel("Price")
 
     fig = Figure(figsize=(5, 4), dpi=100)
     plot1 = fig.add_subplot(111)
+    plot1.set_ylabel("Price", fontsize=8, fontweight='bold')
     fig.autofmt_xdate(rotation=45)
     plot1.plot(dataOne)
 
@@ -343,30 +248,32 @@ def GOOG_stock_line():
 
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
-    #frame.place(relx=0.5, rely=0.65, anchor=CENTER)
-    #toolbar.place(relx=0.5, rely=0.65, anchor=CENTER)
     canvas.draw()
     global currentChart
     currentChart = LINE_CHART
     #here the program defines the glabal variable currentChart as line chart
     #when the user selects the time intervals the program will check to see if the
     #current chart = line chart where it will then execute the time interval for a line chart
-    #plt.close()
-    #toolbarFrame.destroy()
-    # for widgets in toolbarFrame.winfo_children():
-    #     widgets.destroy()
+
+#---
+
+# CANDLESTICK CHARTS
 
 def GOOG_stock_candlestick():
-    plt.close()
+
     start = dt.datetime(2019, 1, 1)
-
     end = dt.datetime.now()
-
     data = web.DataReader("GOOG", 'yahoo', start, end)
 
-    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit", edge="inherit", volume="in")
+    # figure settings
+    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit",
+                                   edge="inherit", volume="in")
     mpf_style = mpf.make_mpf_style(base_mpf_style='binance', marketcolors=colors)
-    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True, figsize=(5, 4), returnfig=True, datetime_format='%b %d')
+    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True,
+                           figsize=(5, 4), returnfig=True, datetime_format='%Y %m')
+    #axlist will be a list of axes corresponding to the panels from top to bottom, two axes
+    # per panel where the first is the primary axes and the next is the _secondary axes. this is
+    # for representing the volume of the candlesticks
 
     canvas = FigureCanvasTkAgg(fig)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
@@ -374,22 +281,22 @@ def GOOG_stock_candlestick():
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
-
-    #plt.close()
     global currentChart
     currentChart = CANDLESTICK_CHART
 
 
 def googOneDayCandleStickChart():
-    plt.close()
+
     today = date.today()
     yesterday = today - timedelta(days=2)
 
     data = web.DataReader("GOOG", 'yahoo', start=yesterday)
 
-    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit", edge="inherit", volume="in")
+    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit",
+                                   edge="inherit", volume="in")
     mpf_style = mpf.make_mpf_style(base_mpf_style='binance', marketcolors=colors)
-    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True, figsize=(5, 4), returnfig=True)
+    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True,
+                           figsize=(5, 4), returnfig=True)
 
     canvas = FigureCanvasTkAgg(fig)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
@@ -397,19 +304,19 @@ def googOneDayCandleStickChart():
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
-    plt.close()
-
 
 def googOneWeekCandleStickChart():
-    plt.close()
+
     today = date.today()
     yesterday = today - timedelta(days=7)
 
     data = web.DataReader("GOOG", 'yahoo', start=yesterday)
 
-    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit", edge="inherit", volume="in")
+    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit",
+                                   edge="inherit", volume="in")
     mpf_style = mpf.make_mpf_style(base_mpf_style='binance', marketcolors=colors)
-    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True, figsize=(5, 4), returnfig=True)
+    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True,
+                           figsize=(5, 4), returnfig=True)
 
     canvas = FigureCanvasTkAgg(fig)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
@@ -417,19 +324,19 @@ def googOneWeekCandleStickChart():
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
-    plt.close()
-
 
 def googOneMonthCandleStickChart():
-    plt.close()
+
     today = date.today()
     yesterday = today - timedelta(days=30)
 
     data = web.DataReader("GOOG", 'yahoo', start=yesterday)
 
-    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit", edge="inherit", volume="in")
+    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit",
+                                   edge="inherit", volume="in")
     mpf_style = mpf.make_mpf_style(base_mpf_style='binance', marketcolors=colors)
-    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True, figsize=(5, 4), returnfig=True)
+    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True,
+                           figsize=(5, 4), returnfig=True)
 
     canvas = FigureCanvasTkAgg(fig)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
@@ -437,73 +344,37 @@ def googOneMonthCandleStickChart():
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
 
-    plt.close()
-
 
 def googOneYearCandleStickChart():
-    plt.close()
+
     today = date.today()
     yesterday = today - timedelta(days=365)
 
     data = web.DataReader("GOOG", 'yahoo', start=yesterday)
 
-    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit", edge="inherit", volume="in")
+    colors = mpf.make_marketcolors(up="green", down="red", wick="inherit",
+                                   edge="inherit", volume="in")
     mpf_style = mpf.make_mpf_style(base_mpf_style='binance', marketcolors=colors)
-    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True, figsize=(5, 4), returnfig=True, datetime_format='%b %d')
+    fig, axlist = mpf.plot(data, type="candle", style=mpf_style, volume=True,
+                           figsize=(5, 4), returnfig=True, datetime_format='%b %d')
 
     canvas = FigureCanvasTkAgg(fig)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
 
     clearToolbar()
     toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
+ #--
 
-    plt.close()
+# PREDICTION LINE
 
-
-# def TSLA_stock():
-#     plt.close()
-#     stockOne = ['TSLA']
-#     dataOne = pdr.get_data_yahoo(stockOne, start='2019-01-01')['Close']
-#     dataOne.head()
-#
-#     rcParams['figure.figsize'] = 12, 6
-#     plt.plot(dataOne.TSLA)
-#     plt.grid(True, color='k', linestyle=':')
-#     plt.title("TSLA Prices")
-#     plt.xlabel("Date")
-#
-#     fig = Figure(figsize=(5, 4), dpi=100)
-#     plot1 = fig.add_subplot(111)
-#     plot1.plot(dataOne)
-#
-#     canvas = FigureCanvasTkAgg(fig, master=root)
-#     canvas.get_tk_widget().place(x=380, y=100)
-#     toolbar = NavigationToolbar2Tk(canvas, root)
-#     toolbar.place(relx=0.5, rely=0.65, anchor=CENTER)
-#     canvas.draw()
-#
-#
-# def menuOptTsla():
-#     labelTitle = Label(root, text="Tesla", font=('Helvetica', 10))
-#     labelTitle.place(x=600, y=0)
-#
-#     tslaLineChart = Button(root, text="Line Chart", command=TSLA_stock, padx=20, pady=5)
-#     tslaLineChart.place(x=400, y=30)
-#
-#     tslaCandleChart = Button(root, text="Candlestick Chart", command=None, padx=10, pady=5)
-#     tslaCandleChart.place(x=560, y=30)
-#
-#     tslaPredictionLine = Button(root, text="Prediction Line", command=None, padx=10, pady=5)
-#     tslaPredictionLine.place(x=720, y=30)
-
-
-#####################  PREDICTION LINE
-
+#setting global variable
 company = 'GOOG'
 
-
 def predictionTool():
-    start = dt.datetime(2019, 1, 1) #21
+
+    userNote()#notifies user that this process takes time to output
+
+    start = dt.datetime(2019, 1, 1)
     end = dt.datetime(2022, 1, 1)
 
     data = web.DataReader(company, 'yahoo', start, end)
@@ -513,7 +384,7 @@ def predictionTool():
     # prepare data - scale down all the data values recieved so that they fit between 0 and 1
     scaler = MinMaxScaler(feature_range=(0, 1))  # (min, max), default=(0, 1)
 
-    # only going to transoform closing price as i am predicting only closing price
+    # only going to transform closing price as i am predicting only closing price
 
     scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1, 1))
 
@@ -532,18 +403,19 @@ def predictionTool():
     x_train, y_train = np.array(x_train), np.array(y_train)
     # reshape x train so it works with neural network
     print('1')
-    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))  # add one extra dimension - numpy.reshape(a, newshape, order='C')
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))  # add one extra
+    # dimension - numpy.reshape(a, newshape, order='C')
     print('2')
 
-    # building the model
+    # BUILDING THE MODEL
 
     model = Sequential()
 
     model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
     # lstm, droupout, lstm, dropout, dense layers
 
-    # ^ experiment with layers and units. the more units and layers the longer you train and risk of overfitting because of too many layers of sophistication
-    # lstm is a recurrent cell, so feeds back info not just feed forward like dense layer
+    # ^ experiment with layers and units. the more units and layers the longer you train and risk of overfitting because of
+    # too many layers of sophistication lstm is a recurrent cell, so feeds back info not just feed forward like dense layer
 
     model.add(Dropout(0.2))
     model.add(LSTM(units=50, return_sequences=True))
@@ -557,14 +429,16 @@ def predictionTool():
     model.fit(x_train, y_train, epochs=25,
               batch_size=32)  # model will see same data 24 times and model will see 32 units at once
 
-    # see how well this model will perform based on past data that we already have. if i always look back at the last 60 days what are the chances of this model being right
+    # see how well this model will perform based on past data that we already have. if i
+    # always look back at the last 60 days what are the chances of this model being right
 
-    # TEST THE MODEL ACCURACY ON EXSITING DATA
+    # TEST MODEL ACCURACY ON EXISTING DATA:
+
     # load test data
 
-    test_start = dt.datetime(2021, 1, 1) #start testing earlier in the past so that the user can see how well the model predicts for a longer
-    #interval of time
-    test_end = dt.datetime.now()  # we have data model has never seen so we can see how well the model performs on data
+    test_start = dt.datetime(2021, 1, 1) #start testing earlier in the past so that the user can see how
+    # well the model predicts for a longer interval of time
+    test_end = dt.datetime.now()  # load data model has never seen so we can see how well the model performs on data
 
     test_data = web.DataReader(company, 'yahoo', test_start, test_end)
     actual_prices = test_data['Close'].values
@@ -577,7 +451,8 @@ def predictionTool():
     model_inputs = model_inputs.reshape(-1, 1)
     model_inputs = scaler.transform(model_inputs)
 
-    # this is how we load data and have prepared data and now we predict based on the data that we have never seen before to evaluate how accurate the model is
+    # this is how we load data and have prepared data and now we predict based on the data that we have never
+    # seen before to evaluate how accurate the model is
 
     # MAKE PREDICTIONS ON TEST DATA
 
@@ -595,17 +470,15 @@ def predictionTool():
     predicted_prices = scaler.inverse_transform(predicted_prices)
 
     # PLOT THE PREDICTIONS TO SEE HOW WELL MODEL PERFORMS
+
     plt.close()
 
     fig = Figure(figsize=(5, 4), dpi=100)
     a = fig.add_subplot(111)
 
     a.plot(actual_prices, color="black", label=f"Actual {company} Price")
-    a.plot(predicted_prices, color="green", label=f"Predicted {company} Price")
-    plt.title(f"{company} Share Price")
-    plt.xlabel('Time')
-    plt.ylabel(f'{company} Share Price')
-    plt.legend()
+    a.plot(predicted_prices, color="green", label=f"Predicted {company} Price", )
+    a.legend()
 
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.get_tk_widget().place(relx=0.5, rely=0.35, anchor=CENTER)
@@ -626,17 +499,19 @@ def predictionTool():
     print(f"Prediction: {prediction}")
     print("lol")
 
+    # PRINT THE PREDICTION IN THE TKINTER WINDOW
+
     var = StringVar()
     label = Message(root, textvariable=var, relief=RAISED)
     label.place(relx=0.5, rely=0.8, anchor=W, width=141, height=40)
     var.set(f"{prediction}")
 
 
-#####################
-
+#global variables
 menubar = Menu(root)
 
-home = Menu(menubar, tearoff=0)
+# defining menu
+home = Menu(menubar, tearoff=0)# tearoff=0, make the menu stick to the Window.
 menubar.add_cascade(label='Main Menu', menu=home)
 home.add_separator()
 home.add_command(label='Exit', command=root.destroy)
@@ -648,4 +523,4 @@ stocks.add_command(label='Google', command=menuOptGoog)
 
 root.config(menu=menubar)
 
-mainloop()
+mainloop() #tells Python to run the Tkinter event loop.
